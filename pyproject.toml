@@ -11,9 +11,15 @@ dependencies = [
   "mkdocs-material>=9.5.0",
   # Optional: for abstract extraction in review generation
   "pypdf>=4.2.0",
+  # UI
+  "streamlit>=1.36.0",
+  # AI optional (RAG skeleton)
+  "langchain-community>=0.3.0",
+  "langchain-openai>=0.2.0",
+  "chromadb>=0.5.5",
 ]
 
 [tool.uv]
-package = true
+# This project isn't an installable package; just manage deps via uv
+package = false
 dev-dependencies = []
-
