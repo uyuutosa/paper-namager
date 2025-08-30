@@ -1,0 +1,48 @@
+{
+  // VS Code launch configurations for this repo
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Review UI (Streamlit)",
+      "type": "python",
+      "request": "launch",
+      "module": "streamlit",
+      "args": [
+        "run",
+        "ui/app.py"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    },
+    {
+      "name": "Generate Review (CLI)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/generate_review.py",
+      "args": [
+        "--tag", "multi-agent",
+        "--year", "2025",
+        "--title", "Multi-Agent Review 2025"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    },
+    {
+      "name": "MkDocs: Serve",
+      "type": "python",
+      "request": "launch",
+      "module": "mkdocs",
+      "args": [
+        "serve",
+        "--config-file",
+        "site/mkdocs.yml"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    }
+  ]
+}
+
