@@ -1,0 +1,19 @@
+[project]
+name = "paper-notes"
+version = "0.1.0"
+description = "Paper notes + scripts + review generator"
+requires-python = ">=3.11"
+readme = "README.md"
+
+dependencies = [
+  # Docs
+  "mkdocs>=1.6.0",
+  "mkdocs-material>=9.5.0",
+  # Optional: for abstract extraction in review generation
+  "pypdf>=4.2.0",
+]
+
+[tool.uv]
+package = true
+dev-dependencies = []
+

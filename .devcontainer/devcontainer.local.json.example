@@ -1,0 +1,11 @@
+{
+  // Local-only overrides for your machine. Copy to
+  // `.devcontainer/devcontainer.local.json` and edit the path below.
+  // Be sure to use an absolute path (no ~), e.g. 
+  //   "/Users/you/OneDrive/Papers" or "C:\\Users\\you\\OneDrive\\Papers"
+  // VS Code does not expand ~ in `${localEnv:...}`.
+  "mounts": [
+    "source=${localEnv:ONEDRIVE_PAPERS_ROOT},target=/workspaces/onedrive,type=bind,consistency=cached"
+  ]
+}
+

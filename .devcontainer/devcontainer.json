@@ -1,0 +1,37 @@
+{
+  // Dev container for Paper Notes repo
+  "name": "paper-notes",
+  // Build from local Dockerfile to bake setup into the image
+  // Use workspace root as context (common in devcontainer templates)
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+        "python.analysis.typeCheckingMode": "basic",
+        "files.trimTrailingWhitespace": true
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  },
+  // Note: To mount your OneDrive folder from the host, create
+  // a `.devcontainer/devcontainer.local.json` with a `mounts` entry.
+  // See `.devcontainer/devcontainer.local.json.example` in this repo.
+  // If you enable the mount in your local override, also set this so scripts see the path.
+  "remoteEnv": {
+    "ONEDRIVE_PAPERS_ROOT": "/workspaces/onedrive"
+  },
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+  "postStartCommand": "bash .devcontainer/postStart.sh"
+}
