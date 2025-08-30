@@ -44,5 +44,15 @@
       "justMyCode": true
     }
   ]
+  ,
+  "compounds": [
+    {
+      "name": "App: All-in-One (Current Stack)",
+      "configurations": [
+        "Review UI (Streamlit)",
+        "MkDocs: Serve"
+      ],
+      "stopAll": true
+    }
+  ]
 }
-

@@ -83,6 +83,70 @@ def try_extract_abstract_from_pdf(pdf_path: Path, max_pages: int = 2) -> str:
         from pypdf import PdfReader  # type: ignore
     except Exception:
         return ''
+
+
+def extract_pdf_metadata(pdf_path: Path) -> Dict[str, object]:
+    """Best-effort PDF metadata extraction.
+
+    Returns keys: title(str), authors(List[str]), year(str), doi(str), keywords(List[str])
+    Missing fields are empty strings or empty lists.
+    """
+    meta: Dict[str, object] = {
+        'title': '',
+        'authors': [],
+        'year': '',
+        'doi': '',
+        'keywords': [],
+    }
+    try:
+        from pypdf import PdfReader  # type: ignore
+    except Exception:
+        return meta
+    try:
+        reader = PdfReader(str(pdf_path))
+        info = reader.metadata or {}
+        title = getattr(info, 'title', '') or info.get('/Title', '') if isinstance(info, dict) else str(getattr(info, 'title', '') or '')
+        author = getattr(info, 'author', '') or info.get('/Author', '') if isinstance(info, dict) else str(getattr(info, 'author', '') or '')
+        subj = getattr(info, 'subject', '') or info.get('/Subject', '') if isinstance(info, dict) else ''
+        keywords = getattr(info, 'keywords', '') or info.get('/Keywords', '') if isinstance(info, dict) else ''
+        create_date = getattr(info, 'creation_date', '') or info.get('/CreationDate', '') if isinstance(info, dict) else ''
+        if title:
+            meta['title'] = str(title).strip()
+        if author:
+            # split by common separators
+            auths = [a.strip() for a in str(author).replace(';', ',').split(',') if a.strip()]
+            if auths:
+                meta['authors'] = auths
+        if keywords:
+            kws = [k.strip() for k in str(keywords).replace(';', ',').split(',') if k.strip()]
+            if kws:
+                meta['keywords'] = kws
+        # crude year from creation date
+        import re as _re
+        m = _re.search(r'(19|20)\d{2}', str(create_date))
+        if m:
+            meta['year'] = m.group(0)
+
+        # scan first page for DOI and potentially better title line
+        text = ''
+        try:
+            text = reader.pages[0].extract_text() or ''
+        except Exception:
+            text = ''
+        # DOI
+        mdoi = _re.search(r'(10\.\d{4,9}/[-._;()/:A-Z0-9]+)', text, flags=_re.IGNORECASE)
+        if mdoi:
+            meta['doi'] = mdoi.group(1)
+        # If title empty, take the first non-empty line (heuristic)
+        if not meta['title']:
+            for line in text.splitlines():
+                s = line.strip()
+                if len(s) > 8 and len(s.split()) >= 3:
+                    meta['title'] = s
+                    break
+    except Exception:
+        pass
+    return meta
     try:
         reader = PdfReader(str(pdf_path))
         text = ''
@@ -134,11 +198,64 @@ def load_note_info(p: Path) -> Dict[str, object]:
 
 def resolve_local_pdf(meta: Dict[str, object]) -> Optional[Path]:
     hint = str(meta.get('local_hint') or '').strip()
-    root = os.getenv('ONEDRIVE_PAPERS_ROOT')
-    if not hint or not root:
+    if not hint:
         return None
-    candidate = Path(root) / hint
-    return candidate if candidate.exists() else None
+    # 1) Absolute path or workspace-relative path
+    p = Path(hint)
+    if p.is_absolute() and p.exists():
+        return p
+    if p.exists():
+        return p
+    # 2) Under ONEDRIVE_PAPERS_ROOT if provided
+    root = os.getenv('ONEDRIVE_PAPERS_ROOT')
+    if root:
+        candidate = Path(root) / hint
+        if candidate.exists():
+            return candidate
+    # 3) Fallback to default uploads directory
+    uploads = Path('data') / 'uploads'
+    candidate2 = uploads / Path(hint).name
+    if candidate2.exists():
+        return candidate2
+    return None
+
+
+def update_note_front_matter(path: Path, updates: Dict[str, object]) -> None:
+    """Update YAML-like front matter of a note with provided keys.
+
+    Only touches the front matter block; preserves the body.
+    """
+    text = read_file(path)
+    meta, offset = parse_front_matter(text)
+    # merge
+    for k, v in updates.items():
+        meta[k] = v
+    # render simple YAML lines (keep a stable key order)
+    def fmt_val(v: object) -> str:
+        if isinstance(v, list):
+            return '[' + ', '.join([f'"{str(x)}"' if (',' in str(x) or ' ' in str(x)) else str(x) for x in v]) + ']'
+        if isinstance(v, str):
+            # quote if contains colon
+            if ':' in v or v.strip() == '' or v.strip() != v:
+                return f'"{v}"'
+            return v
+        return str(v)
+    keys_order = [
+        'paper_id','title','authors','venue','year','doi','pdf_link','local_hint',
+        'tags','pestle','methods','code','datasets','my_rating','replication_risk'
+    ]
+    lines: List[str] = ['---']
+    for k in keys_order:
+        if k in meta:
+            lines.append(f"{k}: {fmt_val(meta[k])}")
+    # include any extra keys
+    for k, v in meta.items():
+        if k not in keys_order:
+            lines.append(f"{k}: {fmt_val(v)}")
+    lines.append('---')
+    body = text[offset:]
+    new_text = '\n'.join(lines) + '\n' + body.lstrip('\n')
+    path.write_text(new_text, encoding='utf-8')
 
 
 def build_review_markdown(title: str, items: List[Dict[str, object]], include_abstract: bool) -> str:
@@ -228,8 +345,9 @@ def list_all_tags_and_years() -> Tuple[List[str], List[int]]:
     return sorted(tags_set), sorted(years_set)
 
 
-def generate_review(title: str, filter_tags: List[str], year: Optional[int], 
-                    papers: List[str], include_abstract: bool) -> Tuple[str, List[Dict[str, object]]]:
+def generate_review(title: str, filter_tags: List[str], year: Optional[int],
+                    papers: List[str], include_abstract: bool,
+                    uploaded_pdfs: Optional[Dict[str, Path]] = None) -> Tuple[str, List[Dict[str, object]]]:
     notes = find_notes(filter_tags, year, papers)
     if not notes:
         return '', []
@@ -237,11 +355,15 @@ def generate_review(title: str, filter_tags: List[str], year: Optional[int],
     if include_abstract:
         for it in items:
             m = it['meta']  # type: ignore
-            local_pdf = resolve_local_pdf(m)
+            pid = str(m.get('paper_id', ''))
             abs_text = ''
-            if local_pdf:
-                abs_text = try_extract_abstract_from_pdf(local_pdf)
+            # Prefer uploaded file bound to this paper id, fallback to local resolution
+            if uploaded_pdfs and pid in uploaded_pdfs:
+                abs_text = try_extract_abstract_from_pdf(uploaded_pdfs[pid])
+            else:
+                local_pdf = resolve_local_pdf(m)
+                if local_pdf:
+                    abs_text = try_extract_abstract_from_pdf(local_pdf)
             it['abstract'] = abs_text
     content = build_review_markdown(title, items, include_abstract=include_abstract)
     return content, items
-
