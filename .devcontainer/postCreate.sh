@@ -21,3 +21,19 @@ echo "[postCreate] Using uv at: $UV_BIN"
 
 echo "[postCreate] uv sync complete. Virtualenv at .venv"
 
+echo "[postCreate] Ensuring Volta and Node LTS are available..."
+if ! command -v volta >/dev/null 2>&1; then
+  echo "[postCreate] Installing Volta (node toolchain)"
+  curl -fsSL https://get.volta.sh | bash -s -- -y
+  if ! grep -q 'VOLTA_HOME' "$HOME/.bashrc" 2>/dev/null; then
+    echo 'export VOLTA_HOME="$HOME/.volta"' >> "$HOME/.bashrc"
+    echo 'export PATH="$VOLTA_HOME/bin:$PATH"' >> "$HOME/.bashrc"
+  fi
+  export VOLTA_HOME="$HOME/.volta"
+  export PATH="$VOLTA_HOME/bin:$PATH"
+fi
+if ! command -v node >/dev/null 2>&1; then
+  echo "[postCreate] Installing Node LTS via Volta"
+  volta install node@lts npm@latest
+fi
+echo "[postCreate] Node version: $(node -v 2>/dev/null || echo 'not found')"
