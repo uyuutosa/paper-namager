@@ -1,6 +1,22 @@
 from __future__ import annotations
 
 from typing import List, Tuple
+import json
+import os
+from pathlib import Path
+
+
+SETTINGS_PATH = Path("data/settings.json")
+
+
+def _load_saved_key() -> tuple[str | None, str | None]:
+    try:
+        if SETTINGS_PATH.exists():
+            s = json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
+            return s.get("api_key"), s.get("provider") or "openai"
+    except Exception:
+        pass
+    return None, None
 
 
 def generate_with_langchain(prompt: str, context: str, *, model: str = "gpt-4o-mini", temperature: float = 0.2) -> str:
@@ -17,7 +33,15 @@ def generate_with_langchain(prompt: str, context: str, *, model: str = "gpt-4o-m
         raise RuntimeError(f"LangChain/OpenAI not available: {e}")
 
     if not (os.getenv("OPENAI_API_KEY") or os.getenv("AZURE_OPENAI_API_KEY")):
-        raise RuntimeError("OPENAI_API_KEY (or AZURE_OPENAI_API_KEY) is not set")
+        # Try to load from saved settings
+        key, provider = _load_saved_key()
+        if key:
+            if provider == "openai":
+                os.environ["OPENAI_API_KEY"] = key
+            else:
+                os.environ["AZURE_OPENAI_API_KEY"] = key
+        else:
+            raise RuntimeError("OPENAI_API_KEY (or AZURE_OPENAI_API_KEY) is not set")
 
     sys_pt = (
         "You are a helpful research assistant. Use the provided Context to answer. "
@@ -47,4 +71,3 @@ def build_context_from_docs(docs: List[Tuple[str, str, float]], *, top_k: int = 
         snippet = text[:per_doc_chars]
         parts.append(f"# [{pid}] (w={w})\n{snippet}")
     return "\n\n---\n\n".join(parts)
-

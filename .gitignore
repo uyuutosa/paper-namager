@@ -8,3 +8,8 @@ __pycache__/
 # MkDocs build output
 _site/
 .venv/
+data/settings.json
+.env
+.env.*
+web/node_modules
+web/dist

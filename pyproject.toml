@@ -17,6 +17,9 @@ dependencies = [
   "langchain-community>=0.3.0",
   "langchain-openai>=0.2.0",
   "chromadb>=0.5.5",
+  # Backend API for React app
+  "fastapi>=0.111.0",
+  "uvicorn>=0.30.0",
 ]
 
 [tool.uv]

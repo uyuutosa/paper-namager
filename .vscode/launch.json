@@ -3,6 +3,33 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Backend (FastAPI)",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "backend.main:app",
+        "--reload",
+        "--port",
+        "8001"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    },
+    {
+      "name": "Frontend (React)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "cwd": "${workspaceFolder}/web",
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Review UI (Streamlit)",
       "type": "python",
       "request": "launch",
@@ -47,10 +74,10 @@
   ,
   "compounds": [
     {
-      "name": "App: All-in-One (Current Stack)",
+      "name": "App: React + API",
       "configurations": [
-        "Review UI (Streamlit)",
-        "MkDocs: Serve"
+        "Backend (FastAPI)",
+        "Frontend (React)"
       ],
       "stopAll": true
     }
