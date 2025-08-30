@@ -9,3 +9,9 @@ nav:
       - 2025-smith-multiagent-x: notes/2025-smith-multiagent-x.md
   - Tags:
       - RLHF: tags/rlhf.md
+      - Multi-Agent: tags/multi-agent.md
+      - Safety: tags/safety.md
+      - Retrieval: tags/retrieval.md
+      - Evaluation: tags/evaluation.md
+      - Debate: tags/debate.md
+  - Reviews: reviews/README.md
