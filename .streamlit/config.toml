@@ -1,0 +1,4 @@
+[server]
+# Allow access from other devices on the network (e.g., smartphones)
+address = "0.0.0.0"
+port = 8501
