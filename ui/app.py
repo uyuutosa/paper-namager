@@ -13,6 +13,7 @@ from paper_notes.review import (
     extract_pdf_metadata,
     update_note_front_matter,
 )
+from ai.rag import build_context_from_docs, generate_with_langchain  # type: ignore
 from scripts.paper_sync import infer_paper_id, create_note, load_manifest, append_manifest  # type: ignore
 
 
@@ -221,12 +222,14 @@ st.markdown("---")
 
 # --- Prompt Studio (Experimental) ---
 st.subheader("Prompt Studio (Experimental)")
-st.caption("Notebook LM風: 複数ノート/アップロードPDFを参照してプロンプトを実行（簡易合成）。")
+st.caption("Notebook LM風: 複数ノート/アップロードPDFを参照してプロンプトを実行。LLMは任意。")
 
 if 'doc_weights' not in st.session_state:
     st.session_state.doc_weights = {}
 
 prompt = st.text_area("Prompt", value="Compare the contributions and limitations of the selected papers.", height=120)
+use_llm = st.toggle("Use AI (LangChain)", value=False, help="OPENAI_API_KEY または AZURE_OPENAI_API_KEY が必要")
+model_name = st.text_input("Model (OpenAI)", value="gpt-4o-mini", help="LangChain ChatOpenAI用のモデル名") if use_llm else ""
 
 if selected_pids:
     with st.expander("Selected documents & weights", expanded=False):
@@ -255,16 +258,22 @@ if run_prompt:
         text = (abstract + "\n\n" + info['body']) if abstract else info['body']  # type: ignore
         docs.append((pid, text, weight))
 
-    # Naive synthesis: include top-k by weight, clip length
-    docs = sorted(docs, key=lambda x: x[2], reverse=True)
+    # Build context from weighted docs
     k = min(5, len(docs))
-    context_parts = []
-    for pid, text, w in docs[:k]:
-        snippet = text[:2000]
-        context_parts.append(f"# [{pid}] (w={w})\n{snippet}")
-    context = "\n\n---\n\n".join(context_parts)
-    output = f"## Prompt\n{prompt}\n\n## Context (top {k})\n{context}\n\n## Output (placeholder)\nWrite your reasoning here or connect an LLM."
-    with st.expander("Prompt Result", expanded=True):
-        st.markdown(output)
+    context = build_context_from_docs(docs, top_k=k)
+    if use_llm:
+        try:
+            resp = generate_with_langchain(prompt, context, model=model_name or "gpt-4o-mini")
+            st.markdown("## Output (LLM)")
+            st.markdown(resp)
+        except Exception as e:
+            st.error(f"LLM実行に失敗しました: {e}")
+            st.caption("環境変数 OPENAI_API_KEY などが未設定の可能性があります。")
+            with st.expander("Context Preview", expanded=False):
+                st.code(context)
+    else:
+        output = f"## Prompt\n{prompt}\n\n## Context (top {k})\n{context}\n\n## Output (placeholder)\nWrite your reasoning here or enable AI mode."
+        with st.expander("Prompt Result", expanded=True):
+            st.markdown(output)
 
 st.markdown("---")
