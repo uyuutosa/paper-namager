@@ -1,0 +1,39 @@
+{
+  "Paper Note": {
+    "prefix": "paper",
+    "body": [
+      "---",
+      "paper_id: ${1:2025-smith-example}",
+      "title: \"${2:Title}\"",
+      "authors: []",
+      "venue: ",
+      "year: ${3:2025}",
+      "doi: ",
+      "pdf_link: ",
+      "local_hint: ",
+      "tags: []",
+      "pestle: []",
+      "methods: []",
+      "code: ",
+      "datasets: []",
+      "my_rating: ",
+      "replication_risk: ",
+      "---",
+      "## TL;DR（3行）",
+      "- ",
+      "- ",
+      "- ",
+      "",
+      "## Contribution",
+      "## Method",
+      "## Results / Limits",
+      "## For my work",
+      "## Quotes",
+      "## BibTeX",
+      "```bibtex",
+      "@inproceedings{",
+      "}",
+      "```"
+    ]
+  }
+}
