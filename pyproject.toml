@@ -11,9 +11,10 @@ dependencies = [
   "mkdocs-material>=9.5.0",
   # Optional: for abstract extraction in review generation
   "pypdf>=4.2.0",
+  # UI
+  "streamlit>=1.36.0",
 ]
 
 [tool.uv]
 package = true
 dev-dependencies = []
-

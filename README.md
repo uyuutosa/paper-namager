@@ -150,6 +150,11 @@
 MkDocs ナビゲーションへの追加（任意）:
 - `site/mkdocs.yml` の `nav` に `reviews/README.md` や生成されたファイルを項目として追加してください。
 
+## 簡易UI（Streamlit）
+- 起動: `uv run streamlit run ui/app.py`
+- 機能: タグ/年で絞り込み、対象ノートを選択、タイトルとAbstract有無を指定してレビューMarkdownを生成・保存・ダウンロード
+- Abstract抽出を使う際は `ONEDRIVE_PAPERS_ROOT` を設定してローカルPDFを解決できるようにしてください。
+
 ## 依存管理（uv）チートシート
 - 依存を同期: `uv sync`
 - パッケージ追加: `uv add <package>`（例: `uv add pypdf`）
